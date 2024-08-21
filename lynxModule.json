@@ -1,0 +1,12 @@
+{
+  "id": "lynxhub-module-sample",
+  "title": "LynxHub Sample Module",
+  "description": "Basic module implement",
+  "publishDate": "2024-08-21",
+  "requireAppBuild": 5,
+  "repoUrl": "https://github.com/KindaBrazy/LynxHub-Module-Guide",
+  "version": "0.1.0",
+  "updateDate": "2024-08-21 12:00",
+  "changeLog": "V0.1.0 \n Nothing!",
+  "logoUrl": "https://avatars.githubusercontent.com/u/143181745?v=4"
+}
