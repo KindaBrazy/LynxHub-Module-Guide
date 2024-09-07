@@ -1,6 +1,7 @@
 import {isEmpty} from 'lodash';
 
-import {ArgType, CardRendererMethods, Category, ChosenArgument} from '../../types';
+import {ArgType, CardRendererMethods, Category, ChosenArgument, DataSection, ExtensionData} from '../../types';
+import {isWin} from '../../Utils/CrossUtils';
 import {catchAddress, getArgumentType, isValidArg, removeEscapes} from '../../Utils/RendererUtils';
 import automatic1111Arguments from './Arguments';
 
@@ -8,6 +9,7 @@ function getTypeByCategoryName(category: string): Category {
   switch (category) {
     case 'Command Line Arguments':
       return 'cl';
+    case 'Environment':
     case 'Environment Variables':
       return 'env';
     default:
@@ -22,6 +24,7 @@ function getCategoryType(name: string): Category {
     if ('sections' in argument) {
       for (const section of argument.sections) {
         if (section.items.some(item => item.name === name)) {
+          if (section.section === 'Variables') return 'envVar';
           return getTypeByCategoryName(argument.category);
         }
       }
@@ -36,30 +39,52 @@ function getCategoryType(name: string): Category {
 }
 
 export function parseArgsToString(args: ChosenArgument[]): string {
-  let result: string = '@echo off\n\n';
+  let result: string = isWin ? '@echo off\n\n' : '#!/bin/bash\n\n';
   let clResult: string = '';
 
   args.forEach(arg => {
     const cat = getCategoryType(arg.name);
-    if (cat === 'env') {
-      if (arg.name !== 'COMMANDLINE_ARGS') result += `set ${arg.name}=${arg.value}\n`;
+    if (cat !== 'cl') {
+      const eWinResult: string = `set ${arg.name}=${arg.value}\n`;
+      const eResult: string = cat === 'env' ? `export ${arg.name}="${arg.value}"\n` : `${arg.name}="${arg.value}"\n`;
+      if (arg.name !== 'COMMANDLINE_ARGS') result += isWin ? eWinResult : eResult;
     } else if (cat === 'cl') {
       const argType = getArgumentType(arg.name, automatic1111Arguments);
       if (argType === 'CheckBox') {
         clResult += `${arg.name} `;
       } else if (argType === 'File' || argType === 'Directory') {
-        clResult += `${arg.name} "${arg.value}" `;
+        clResult += isWin ? `${arg.name} "${arg.value}" ` : `${arg.name} ${arg.value} `;
       } else {
         clResult += `${arg.name} ${arg.value} `;
       }
     }
   });
 
-  if (!isEmpty(clResult)) result += `set COMMANDLINE_ARGS=${clResult}\n`;
+  if (!isEmpty(clResult)) {
+    result += isWin ? `set COMMANDLINE_ARGS=${clResult}\n` : `export COMMANDLINE_ARGS=${clResult}\n`;
+  }
 
-  result += `\ncall webui.bat`;
+  result += isWin ? `\ncall webui.bat` : ``;
 
   return result;
+}
+
+function checkLinuxArgLine(line: string): 'set' | 'export' | 'var' | undefined {
+  if (isWin && line.startsWith('set ')) return 'set';
+
+  if (line.startsWith('export ')) return 'export';
+
+  for (const arg of automatic1111Arguments) {
+    if (arg.category === 'Environment') {
+      if ((arg as DataSection).sections[0].items.find(item => item.name === line.split('=')[0])) {
+        return 'var';
+      } else {
+        return undefined;
+      }
+    }
+  }
+
+  return undefined;
 }
 
 export function parseStringToArgs(args: string): ChosenArgument[] {
@@ -67,7 +92,9 @@ export function parseStringToArgs(args: string): ChosenArgument[] {
   const lines: string[] = args.split('\n');
 
   lines.forEach((line: string): void => {
-    if (line.startsWith('set COMMANDLINE_ARGS=')) {
+    if (line.startsWith('#')) {
+      return;
+    } else if (line.startsWith(`${isWin ? 'set' : 'export'} COMMANDLINE_ARGS=`)) {
       argResult.push({name: 'COMMANDLINE_ARGS', value: ''});
       // Extract the command line arguments and clear falsy values
       const clArgs: string = line.split('=')[1];
@@ -96,13 +123,23 @@ export function parseStringToArgs(args: string): ChosenArgument[] {
           }
         }
       });
-    } else if (line.startsWith('set ')) {
-      // If line starts with 'set ', extract the environment variable id and value
-      let [name, value] = line.replace('set ', '').split('=');
-      name = removeEscapes(name.trim());
-      value = removeEscapes(value.trim());
-      if (isValidArg(name, automatic1111Arguments)) {
-        argResult.push({name, value});
+    } else {
+      const lineType = checkLinuxArgLine(line);
+      if (lineType === 'export' || lineType === 'set') {
+        // If line starts with 'set ' or 'export ', extract the environment variable id and value
+        let [name, value] = line.replace(`${lineType} `, '').split('=');
+        name = removeEscapes(name.trim());
+        value = removeEscapes(value.trim());
+        if (isValidArg(name, automatic1111Arguments)) {
+          argResult.push({name, value});
+        }
+      } else if (checkLinuxArgLine(line) === 'var') {
+        let [name, value] = line.split('=');
+        name = removeEscapes(name.trim());
+        value = removeEscapes(value.trim());
+        if (isValidArg(name, automatic1111Arguments)) {
+          argResult.push({name, value});
+        }
       }
     }
   });
@@ -110,6 +147,24 @@ export function parseStringToArgs(args: string): ChosenArgument[] {
   return argResult;
 }
 
-const a1RendererMethods: CardRendererMethods = {catchAddress, parseArgsToString, parseStringToArgs};
+export async function fetchExtensionList(): Promise<ExtensionData[]> {
+  try {
+    const response = await fetch(
+      'https://raw.githubusercontent.com/AUTOMATIC1111/stable-diffusion-webui-extensions/master/index.json',
+    );
+    const extensions = await response.json();
+    return extensions.extensions.map((extension: any) => ({
+      title: extension.name,
+      description: extension.description,
+      url: extension.url,
+      stars: extension.stars,
+    }));
+  } catch (e) {
+    console.error(e);
+    return [];
+  }
+}
+
+const a1RendererMethods: CardRendererMethods = {catchAddress, fetchExtensionList, parseArgsToString, parseStringToArgs};
 
 export default a1RendererMethods;

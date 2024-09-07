@@ -44,7 +44,7 @@ Follow these steps to set up your environment for building and testing your modu
 
 1. **Clone the repository**:
    ```bash
-   git clone https://github.com/KindaBrazy/LynxHub
+   git clone https://github.com/KindaBrazy/LynxHub-Module-Guide
    cd LynxHub
    ```
 
@@ -128,8 +128,10 @@ important information not covered in the d.ts file or JSON will be explained bel
 > [!TIP]
 >
 > - I'm continuously working to enhance LynxHub's modularity and customization options.
->   - In future updates, modules will be able to install and manage their own AI interfaces, rather than relying solely on
-      LynxHub's built-in options.
+    >
+
+- In future updates, modules will be able to install and manage their own AI interfaces, rather than relying solely on
+  LynxHub's built-in options.
 
 > [!TIP]
 >

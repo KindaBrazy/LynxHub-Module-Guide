@@ -1,11 +1,15 @@
 import {isEmpty} from 'lodash';
 
 import {ArgType, CardRendererMethods, ChosenArgument} from '../../types';
+import {isWin} from '../../Utils/CrossUtils';
 import {catchAddress, getArgumentType, isValidArg} from '../../Utils/RendererUtils';
 import oobaboogaArguments from './Arguments';
+import {fetchExtensionList} from './ExtensionsList';
+
+const shellCommand = isWin ? 'call start_windows.bat' : 'bash ./start_linux.sh';
 
 export function parseArgsToString(args: ChosenArgument[]): string {
-  let result: string = '@echo off\n\n';
+  let result: string = isWin ? '@echo off\n\n' : '#!/bin/bash\n\n';
   let argResult: string = '';
 
   args.forEach(arg => {
@@ -19,7 +23,7 @@ export function parseArgsToString(args: ChosenArgument[]): string {
     }
   });
 
-  result += isEmpty(argResult) ? 'call start_windows.bat' : `call start_windows.bat ${argResult}`;
+  result += isEmpty(argResult) ? shellCommand : `${shellCommand} ${argResult}`;
 
   return result;
 }
@@ -29,10 +33,10 @@ export function parseStringToArgs(args: string): ChosenArgument[] {
   const lines: string[] = args.split('\n');
 
   lines.forEach((line: string): void => {
-    if (!line.startsWith('call start_windows.bat')) return;
+    if (!line.startsWith(shellCommand)) return;
 
     // Extract the command line arguments and clear falsy values
-    const clArgs: string = line.split('call start_windows.bat ')[1];
+    const clArgs: string = line.split(`${shellCommand} `)[1];
 
     if (!clArgs) return;
 
@@ -63,6 +67,11 @@ export function parseStringToArgs(args: string): ChosenArgument[] {
   return argResult;
 }
 
-const oobaRendererMethods: CardRendererMethods = {catchAddress, parseArgsToString, parseStringToArgs};
+const oobaRendererMethods: CardRendererMethods = {
+  catchAddress,
+  fetchExtensionList,
+  parseArgsToString,
+  parseStringToArgs,
+};
 
 export default oobaRendererMethods;

@@ -1,5 +1,12 @@
 export type AvailablePages = '/imageGenerationPage' | '/textGenerationPage' | '/audioGenerationPage';
 
+export type ExtensionData = {
+  title: string;
+  description: string;
+  url: string;
+  stars?: number;
+};
+
 /** These methods will be called in the main process */
 export type CardMainMethods = {
   /** Return commands based on installed directory to be executed with terminal */
@@ -19,6 +26,9 @@ export type CardRendererMethods = {
    * @return undefined if URL is not in that line */
   catchAddress: (line: string) => string | undefined;
 
+  /** Fetching and return array of available extensions in type of `ExtensionData` */
+  fetchExtensionList?: () => Promise<ExtensionData[]>;
+
   /** Parse the given argument to string */
   parseArgsToString?: (args: ChosenArgument[]) => string;
 
@@ -30,7 +40,14 @@ export type CardData = {
   /**  ID will be used to managing state of card */
   id: string;
 
-  /**  Card background */
+  /**  Card background
+   *
+   * **Acceptable sources: **
+   * - github.com
+   * - api.github.com
+   * - *.githubusercontent.com
+   * - image.civitai.com
+   */
   bgUrl: string;
 
   /**  Url to repository (Using this url recognize, clone and update card) */
@@ -102,7 +119,7 @@ export type DataItem = {
 export type ArgumentsData = (DataItem | DataSection)[];
 
 export type ArgType = {name: string; value: string};
-export type Category = 'env' | 'cl' | undefined;
+export type Category = 'env' | 'envVar' | 'cl' | undefined;
 
 export type MainModules = {
   /** The ID of the card that using these methods */
