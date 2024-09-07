@@ -45,7 +45,7 @@ Follow these steps to set up your environment for building and testing your modu
 1. **Clone the repository**:
    ```bash
    git clone https://github.com/KindaBrazy/LynxHub-Module-Guide
-   cd LynxHub
+   cd LynxHub-Module-Guide
    ```
 
 2. **Install dependencies**:
