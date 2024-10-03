@@ -1,6 +1,7 @@
-import {AUTOMATIC1111_ID, OOBABOOGA_ID} from './Constants';
+import {AUTOMATIC1111_ID, NEROGAR_ID, OOBABOOGA_ID} from './Constants';
 import automatic1111Arguments from './Container/Automatic1111/Arguments';
 import a1RendererMethods from './Container/Automatic1111/RendererMethods';
+import nerogarRendererMethods from './Container/Nerogar/RendererMethods';
 import oobaboogaArguments from './Container/Oobabooga/Arguments';
 import oobaRendererMethods from './Container/Oobabooga/RendererMethods';
 import {CardModules} from './types';
@@ -41,5 +42,25 @@ const data: CardModules = [
     ],
   },
 ];
+
+export function setCurrentBuild(build: number) {
+  if (build > 10) {
+    data.forEach(page => {
+      if (page.routePath === '/imageGenerationPage') {
+        page.cards.push({
+          id: NEROGAR_ID,
+          title: 'OneTrainer',
+          description: 'OneTrainer is a one-stop solution for all your stable diffusion training needs.',
+          repoUrl: 'https://github.com/Nerogar/OneTrainer',
+          type: 'image',
+          bgUrl:
+            'https://image.civitai.com/xG1nkqKTMzGDvpLrqFT7WA/4f810fe1-775b-44c4-83f0-f1ad07c8fb09' +
+            '/width=300/00005-1318253062.jpeg',
+          methods: nerogarRendererMethods,
+        });
+      }
+    });
+  }
+}
 
 export default data;
