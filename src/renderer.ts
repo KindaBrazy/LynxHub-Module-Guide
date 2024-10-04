@@ -44,7 +44,7 @@ const data: CardModules = [
 ];
 
 export function setCurrentBuild(build: number) {
-  if (build > 10) {
+  if (build > 11) {
     data.forEach(page => {
       if (page.routePath === '/imageGenerationPage') {
         page.cards.push({

@@ -117,6 +117,7 @@ Fill this file with your repository and information
     - Where **lynxModule.json** file exist
 - `changeLog`: Document update changes
     - Use `\n` for line breaks (other escape characters like `\t` are not supported)
+- `owner`: Is the WebUI or the repository provided by this module owned by you?
 
 ### [renderer.ts](./src/renderer.ts) Tips
 
